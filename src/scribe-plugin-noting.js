@@ -52,28 +52,6 @@ define(function () {
         return temp;
       }
 
-      function wrapRange(range) {
-        var temp = document.createDocumentFragment();
-        var childNodes = range.childNodes;
-
-        childNodes = Array.prototype.slice.call(childNodes);
-
-        childNodes.forEach(function (item) {
-          var tempNode;
-
-          if(item.nodeType === Node.TEXT_NODE) {
-            // this is for a basic selection
-            tempNode = wrapText(item);
-          } else {
-            tempNode = wrapBlock(item);
-          }
-
-          temp.appendChild(tempNode);
-        });
-
-        return temp;
-      }
-
       function hasBlockElements (range) {
         var childNodes = range.childNodes;
 
@@ -87,7 +65,7 @@ define(function () {
       }
 
       function checkScribeMarker (node) {
-         return checkClass(node, "scribe-marker");
+        return checkClass(node, "scribe-marker");
       }
 
       function checkClass(node, value) {
@@ -117,36 +95,23 @@ define(function () {
       };
 
 
+      /* Alternative to merge is to check existing notes and
+       * just expand the note accordingly. Look at the selection
+       * and see what is next door to it. If it's a note then
+       * just append it*/
+
+
       function canMerge(node) {
         return isNote(node.previousSibling)
           || isNote(node.nextSibling);
       }
 
-      function merge(node) {
-        // determine what a node should be merged with
-        var parent = node.parentNode;
-        var previousSibling = node.previousSibling;
-        var nextSibling = node.previousSibling;
-        var content = node.innerHTML;
-
-        if (previousSibling) {
-          previousSibling.appendChild(content);
-        } else if (nextSibling) {
-          nextSibling.appendChild(content);
-        }
-
-        // remove the node empty note
-        parent.removeChild(node);
-
-      }
-
-
-      function mergeNotes(range) {
-        var nodes = buildNodeList(range, function (node) {
-          debugger;
+      function mergeNotes(selection, range) {
+        selection.placeMarkers();
+        selection.selectMarkers(true);
+        var nodes = buildNodeList(range.commonAncestorContainer, function (node) {
           return isNote(node);
         });
-
         nodes.forEach(function (item) {
           // problem I can see is that some of these will already be merged
           if (canMerge(item)) {
@@ -162,6 +127,10 @@ define(function () {
         // fully recursive
         // this is far simpler than doing rubbish
         // with do whiles
+        if (!node) {
+          return;
+        }
+
         var children = node.childNodes;
 
         for (var i = 0; i < children.length; i++) {
@@ -226,11 +195,7 @@ define(function () {
        * This wraps all elements that contain block elements
        * in a note class.
        */
-      function wrapBlocks (selection, range) {
-
-        // drop markers so we can operate on all the sub elements in the selection
-        selection.placeMarkers();
-        selection.selectMarkers(true);
+      function wrapBlocks (range) {
 
         var commonAncestor = range.commonAncestorContainer;
 
@@ -240,40 +205,65 @@ define(function () {
         });
 
 
-        nodes.forEach(function (item, index, array) {
+        nodes.forEach(function (item) {
           var wrap;
           var parent = item.parentNode;
           var sibling = item.nextSibling;
 
-          if (item.nodeType === Node.TEXT_NODE) {
-            // this is for a basic selection
-            wrap = wrapText(item);
-          } else {
-            wrap =  wrapBlock(item);
-          }
+          debugger;
 
-          // replace directly on the tree
-          if (sibling) {
-            parent.insertBefore(wrap, sibling);
-          } else {
-            parent.appendChild(wrap);
-          }
 
+          if (canMerge(item)) {
+            merge(item);
+          } else {
+            replace(item);
+          }
         });
-        selection.selectMarkers();
       }
 
-      function basicUnwrap(selection, range) {
+      function merge(node) {
+        // determine what a node should be merged with
+        var parent = node.parentNode;
+        var previousSibling = node.previousSibling;
+        var nextSibling = node.previousSibling;
+        var content = node.innerHTML;
+
+        if (previousSibling) {
+          previousSibling.appendChild(content);
+        } else if (nextSibling) {
+          nextSibling.appendChild(content);
+        }
+
+        // remove the node empty note
+        parent.removeChild(node);
+
+      }
+
+      function replace(item) {
+        // replace the item with it's expected
+        // note
+        if (item.nodeType === Node.TEXT_NODE) {
+          // this is for a basic selection
+          wrap = wrapText(item);
+        } else {
+          wrap =  wrapBlock(item);
+        }
+
+        // replace directly on the tree
+        if (sibling) {
+          parent.insertBefore(wrap, sibling);
+        } else {
+          parent.appendChild(wrap);
+        }
+
+      }
+
+      function basicUnwrap( range) {
         // this is a seriously flaky way of doing it at the moment
         // I think there are much better alternatives
         // TODO: Investigate if it's even worth doing this on an undo
         // might just be able to use unwrap in the same way as it works
         // when there are block elements.
-
-
-        // drop markers to play with the sibling
-        selection.placeMarkers();
-        selection.selectMarkers(true);
 
         var commonAncestor = range.commonAncestorContainer;
         var parent = commonAncestor.parentNode;
@@ -290,18 +280,14 @@ define(function () {
 
         var contents = document.createTextNode(commonAncestor.innerText);
         parent.replaceChild(contents, commonAncestor);
-        selection.selectMarkers();
 
 
       }
 
 
-      function descentUnwrap (selection, range) {
+      function descentUnwrap (range) {
         // remove all styling from elements within the range
         // in this case they have selected multiple nodes
-        selection.placeMarkers();
-        selection.selectMarkers(true);
-
         // do a recursive unwrap
         var commonAncestor = range.commonAncestorContainer;
         var toBeUnWrapped = buildNodeList(commonAncestor, function (node) {
@@ -314,8 +300,6 @@ define(function () {
           unwrap(item);
         });
 
-        selection.selectMarkers();
-
       }
 
 
@@ -324,6 +308,10 @@ define(function () {
         var selection = new scribe.api.Selection();
         var range = selection.range;
         var cloned = range.cloneContents();
+        // drop markers so we can operate on all the sub elements in the selection
+        selection.placeMarkers();
+        selection.selectMarkers(true);
+
         // if the selection is the whole line, then we need to note the whole line
         // if it isn't then we just do the bit selected and nothing else.
         // selection.selection.data currently will duplicate things if there is no
@@ -333,28 +321,16 @@ define(function () {
           if (this.queryState()) {
 
             if (!hasBlockElements(cloned)) {
-              basicUnwrap(selection, range);
+              basicUnwrap(range);
             } else {
-              descentUnwrap(selection, range);
+              descentUnwrap(range);
             }
           } else {
-            // check if the selection has block elements.
-            // if it does do the complex version,
-            // otherwise do the simple version
-            if (!hasBlockElements(cloned)) {
-              var wrapped = wrapRange(cloned);
-              range.deleteContents();
-              range.insertNode(wrapped);
-            } else {
-              wrapBlocks(selection, range);
-            }
+            wrapBlocks(range);
           }
-
-          // merge everything that can be merged
-          mergeNotes(cloned);
-
+          selection.selectMarkers();
+          // TODO: empty the selection and place the caret after it
         }
-
       };
 
       noteCommand.queryState = function () {
