@@ -146,23 +146,14 @@ define(function () {
       }
 
       function walk(node, func) {
-        // this is a semi-recursive tree descent
-        // although it's a shame it uses a loop
-        // this could be trivially rewritten to be
-        // fully recursive
-        // this is far simpler than doing rubbish
-        // with do whiles
-        if (!node) {
-          return;
+        var nodeIterator = document.createNodeIterator(node);
+        var currentNode;
+        while (currentNode = nodeIterator.nextNode()) {
+          if (!currentNode) {
+            return;
+          }
+          func(currentNode);
         }
-
-        var children = node.childNodes;
-
-        for (var i = 0; i < children.length; i++) {
-          walk(children[i], func);
-        }
-
-        func(node);
       }
 
       function unwrap (element) {
