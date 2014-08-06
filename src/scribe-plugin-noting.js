@@ -206,10 +206,6 @@ define(function () {
 
 
         nodes.forEach(function (item) {
-          var wrap;
-          var parent = item.parentNode;
-          var sibling = item.nextSibling;
-
           debugger;
 
 
@@ -240,6 +236,10 @@ define(function () {
       }
 
       function replace(item) {
+        var wrap;
+        var parent = item.parentNode;
+        var sibling = item.nextSibling;
+
         // replace the item with it's expected
         // note
         if (item.nodeType === Node.TEXT_NODE) {
