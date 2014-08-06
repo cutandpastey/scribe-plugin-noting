@@ -101,9 +101,34 @@ define(function () {
        * just append it*/
 
 
-      function canMerge(node) {
-        return isNote(node.previousSibling)
-          || isNote(node.nextSibling);
+
+      /*
+       * These two function are for moving in and out of the scribe-markers
+       * for merging purposes - they are only used when merging
+       */
+      function getPreviousSibling (node) {
+        var previous = node.previousSibling;
+        if (checkScribeMarker(node.previousSibling)
+            && node.previousSibling.previousSibling) {
+          previous = node.previousSibling.previousSibling;
+        }
+        return previous;
+      }
+
+      function getNextSibling (node) {
+        var next = node.nextSibling;
+
+        if (checkScribeMarker(node.nextSibling)
+            && node.nextSibling.nextSibling) {
+          next = node.nextSibling.nextSibling;
+        }
+        return next;
+      }
+
+
+      function canMerge (node) {
+        return (node.previousSibling && isNote(getPreviousSibling(node)))
+          || (node.nextSibling && isNote(getNextSibling(node)));
       }
 
       function mergeNotes(selection, range) {
@@ -206,9 +231,6 @@ define(function () {
 
 
         nodes.forEach(function (item) {
-          debugger;
-
-
           if (canMerge(item)) {
             merge(item);
           } else {
@@ -220,9 +242,15 @@ define(function () {
       function merge(node) {
         // determine what a node should be merged with
         var parent = node.parentNode;
-        var previousSibling = node.previousSibling;
-        var nextSibling = node.previousSibling;
-        var content = node.innerHTML;
+        var previousSibling = getPreviousSibling(node);
+        var nextSibling = getNextSibling(node);
+        var content;
+
+        if (node.nodeType === Node.TEXT_NODE) {
+          content = node;
+        } else {
+          content = node.innerHTML;
+        }
 
         if (previousSibling) {
           previousSibling.appendChild(content);
