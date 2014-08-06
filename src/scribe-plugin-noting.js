@@ -99,7 +99,7 @@ define(function () {
 
 
       function isNote (node) {
-        return checkClass(node, "note");
+        return node.tagName === nodeName;
       }
 
       function findScribeMarker(node) {
@@ -117,6 +117,43 @@ define(function () {
       };
 
 
+      function canMerge(node) {
+        return isNote(node.previousSibling)
+          || isNote(node.nextSibling);
+      }
+
+      function merge(node) {
+        // determine what a node should be merged with
+        var parent = node.parentNode;
+        var previousSibling = node.previousSibling;
+        var nextSibling = node.previousSibling;
+        var content = node.innerHTML;
+
+        if (previousSibling) {
+          previousSibling.appendChild(content);
+        } else if (nextSibling) {
+          nextSibling.appendChild(content);
+        }
+
+        // remove the node empty note
+        parent.removeChild(node);
+
+      }
+
+
+      function mergeNotes(range) {
+        var nodes = buildNodeList(range, function (node) {
+          debugger;
+          return isNote(node);
+        });
+
+        nodes.forEach(function (item) {
+          // problem I can see is that some of these will already be merged
+          if (canMerge(item)) {
+            merge(node);
+          }
+        });
+      }
 
       function walk(node, func) {
         // this is a semi-recursive tree descent
@@ -312,6 +349,10 @@ define(function () {
               wrapBlocks(selection, range);
             }
           }
+
+          // merge everything that can be merged
+          mergeNotes(cloned);
+
         }
 
       };
