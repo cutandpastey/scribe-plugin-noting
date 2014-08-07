@@ -43,9 +43,16 @@ define(function () {
       function wrapText(content) {
         // wrap the contents of a text node
         // they behave diffent
-        // elements like I and B can be put inside the span
         var wrap = createWrap();
-        wrap.appendChild(content);
+        var value = content;
+
+        if (content.parentNode && isInlineElement(content.parentNode)) {
+          // elements like I and B and STRONG etc. can be put inside the note
+          // notes are basically treated like SPANS
+          value = content.parentNode;
+        }
+
+        wrap.appendChild(value);
         return wrap;
       }
 
