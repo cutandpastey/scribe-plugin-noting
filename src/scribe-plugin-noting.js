@@ -11,14 +11,13 @@ define(function () {
     return function(scribe) {
 
       //currently
-      var tag = "gu-note";
-      var nodeName = "GU-NOTE";
+      var tag = "gu:note";
+      var nodeName = "GU:NOTE";
       var className = "note";
       var dataName = "data-edited-by";
       var dataDate = "data-edited-date";
       var blocks = ["P", "LI", "UL"];
       var inline = ["B", "I", "EM"]; //more to come
-
       var noteCommand = new scribe.api.Command('insertHTML');
 
 
@@ -58,7 +57,6 @@ define(function () {
         // there are some issues with LIs and Bs at the moment
         var wrap = createWrap();
         var temp = block.cloneNode(true);
-        wrap.innerHTML = temp.innerHTML;
         temp.appendChild(wrap);
         return temp;
       }
@@ -236,7 +234,7 @@ define(function () {
             && (getScribeMarker(node.childNodes) === -1);
         });
 
-
+        debugger;
         nodes.forEach(function (item) {
           if (canMerge(item)) {
             // issues here with block and text element
@@ -261,7 +259,7 @@ define(function () {
         var previousSibling = getPreviousSibling(node);
         var nextSibling = getNextSibling(node);
         var content;
-
+        debugger;
         if (node.nodeType === Node.TEXT_NODE) {
           content = node;
         } else {
@@ -369,7 +367,6 @@ define(function () {
 
 
       noteCommand.execute = function () {
-
         var selection = new scribe.api.Selection();
         var range = selection.range;
         var cloned = range.cloneContents();
@@ -381,8 +378,11 @@ define(function () {
         // if it isn't then we just do the bit selected and nothing else.
         // selection.selection.data currently will duplicate things if there is no
         // actual selection
-        if(selection.selection.type === "Range") {
 
+        var base =  selection.selection.baseOffset;
+        var focus = selection.selection.focusOffset;
+
+        if(base !== focus) {
           if (this.queryState()) {
 
             if (!hasBlockElements(cloned)) {
@@ -420,28 +420,13 @@ define(function () {
 
       };
 
-
-      noteCommand.queryEnabled = function () {
-        var selection = new scribe.api.Selection();
-        var headingNode = selection.getContaining(function (node) {
-          return (/^(H[1-6])$/).test(node.nodeName);
-        });
-
-        return scribe.api.CommandPatch.prototype.queryEnabled.apply(this, arguments) && ! headingNode;
-      };
-
-
       scribe.commands.note = noteCommand;
 
-      /* There may be case when we don't want to use the default commands */
-
       scribe.el.addEventListener('keydown', function (event) {
-        //that's F10 and F8
-        if (event.keyCode === 121 ||event.keyCode === 119) {
+        //that's F10 and F8 and alt+del
+        if (event.keyCode === 121 ||event.keyCode === 119 || (event.altKey && event.keyCode === 121)) {
+          event.preventDefault();
           var noteCommand = scribe.getCommand("note");
-          var selection = new scribe.api.Selection();
-          var range = selection.range;
-
           noteCommand.execute();
         }
       });
