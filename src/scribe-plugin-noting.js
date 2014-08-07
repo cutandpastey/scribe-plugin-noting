@@ -293,11 +293,9 @@ define(function () {
             temp = nextSibling.childNodes[0];
           } else {
             temp = nextSibling.innerHTML;
-        }
-
+          }
           previousSibling.appendChild(temp);
           parent.removeChild(nextSibling);
-
         }
       }
 
