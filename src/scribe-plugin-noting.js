@@ -91,11 +91,15 @@ define(function () {
         if (!node.classList) {
           return false;
         }
+
         return node.classList.contains(value);
       }
 
 
       function isNote (node) {
+        if (!node) {
+          return false;
+        }
         return node.tagName === nodeName;
       }
 
@@ -120,6 +124,10 @@ define(function () {
       function getPreviousSibling (node) {
         var previous = node.previousSibling;
 
+        if (!previous) {
+          return null;
+        }
+
         if (checkScribeMarker(node.previousSibling)
             && node.previousSibling.previousSibling) {
           previous = node.previousSibling.previousSibling;
@@ -129,6 +137,10 @@ define(function () {
 
       function getNextSibling (node) {
         var next = node.nextSibling;
+
+        if (!next) {
+          return null;
+        }
 
         if (checkScribeMarker(node.nextSibling)
             && node.nextSibling.nextSibling) {
@@ -140,19 +152,20 @@ define(function () {
       function canMerge (node) {
         var prev = getPreviousSibling(node);
         var next = getNextSibling(node);
+
         /*
          * If the previousSibling or nextSibling is a block element - the note is inside it
          */
-        if (isBlockElement(prev)) {
+        if (prev && isBlockElement(prev)) {
           prev = prev.childNodes[0];
         }
 
-        if (isBlockElement(next)) {
+        if (next && isBlockElement(next)) {
           next = next.childNodes[0];
         }
 
-        return (node.previousSibling && isNote(prev))
-          || (node.nextSibling && isNote(getNextSibling(node)));
+        return (prev && isNote(prev))
+          || (next && isNote(getNextSibling(node)));
       }
 
       function walk(node, func) {
@@ -196,7 +209,6 @@ define(function () {
             return; //do nothing
           }
 
-          debugger;
           if (checkScribeMarker(node)) {
             // begin pushing elements
             if (scribeMarkerLocated === true) {
@@ -226,6 +238,7 @@ define(function () {
           return !checkScribeMarker(node)
             && (getScribeMarker(node.childNodes) === -1);
         });
+
 
         nodes.forEach(function (item) {
           if (canMerge(item)) {
@@ -273,7 +286,6 @@ define(function () {
          * to the right
          */
         if (isNote(nextSibling)) {
-          debugger;
           // append the contents of the nextSibling to this node
           // and delete the nextSibling
           var temp;
