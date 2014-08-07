@@ -234,7 +234,7 @@ define(function () {
             && (getScribeMarker(node.childNodes) === -1);
         });
 
-        debugger;
+
         nodes.forEach(function (item) {
           if (canMerge(item)) {
             // issues here with block and text element
