@@ -97,9 +97,6 @@ define(function () {
 
 
       function isNote (node) {
-        if (!node) {
-          return false;
-        }
         return node.tagName === nodeName;
       }
 
