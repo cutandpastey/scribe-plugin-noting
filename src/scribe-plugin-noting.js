@@ -45,7 +45,16 @@ define(function () {
         // they behave diffent
         // elements like I and B can be put inside the span
         var wrap = createWrap();
-        wrap.appendChild(content);
+        var value = content;
+
+
+        // we try and wrap inline elements as this makes it easier for
+        // merging and altering things
+        if (content.parentNode && isInlineElement(content.parentNode)) {
+          value = content;
+        }
+
+        wrap.appendChild(value);
         return wrap;
       }
 
@@ -312,13 +321,21 @@ define(function () {
           wrap =  wrapBlock(item);
         }
 
+
+        /* this will not work currently
+         at the moment. As the if we're wrapping an
+         inline element the parent will be wrong.
+         Using the grandparent won't help either
+         as the scribe-marker has the inline element as its
+         parent so insertBefore will not work
+         */
+
         // replace directly on the tree
         if (sibling) {
           parent.insertBefore(wrap, sibling);
         } else {
           parent.appendChild(wrap);
         }
-
       }
 
       function basicUnwrap( range) {
