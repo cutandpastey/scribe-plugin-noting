@@ -17,6 +17,7 @@ define(function () {
       var dataName = "data-edited-by";
       var dataDate = "data-edited-date";
       var blocks = ["P", "LI", "UL"];
+      var inline = ["B", "I", "EM"]; //more to come
 
       var noteCommand = new scribe.api.Command('insertHTML');
 
@@ -28,12 +29,22 @@ define(function () {
         wrap.setAttribute("data-edited-by", user);
         wrap.setAttribute("data-edited-date", date);
         return wrap;
-
       }
 
+
+      /*
+       * TODO: Need to wrap inline elements inside the span
+       * rather than the span inside the block element
+       * this should fix a lot of issues to do with
+       * selecting a B and some of not a b etc.
+       * if it has a parent element that can go inside
+       * spans, then use the parent element
+       */
+
       function wrapText(content) {
-        //wrap the contents of a text node
+        // wrap the contents of a text node
         // they behave diffent
+        // elements like I and B can be put inside the span
         var wrap = createWrap();
         wrap.appendChild(content);
         return wrap;
@@ -52,13 +63,21 @@ define(function () {
         return temp;
       }
 
+      function isInlineElement(node) {
+        return blocks.indexOf(node.nodeName) !== 1;
+      }
+
+      function isBlockElement (node) {
+        return blocks.indexOf(node.nodeName) !== -1;
+      }
+
       function hasBlockElements (range) {
         var childNodes = range.childNodes;
 
         childNodes = Array.prototype.slice.call(childNodes);
 
         var temp = childNodes.filter(function (item) {
-          return blocks.indexOf(item.nodeName) !== -1;
+          return isBlockElement(item);
         });
 
         return temp.length > 0;
@@ -94,20 +113,13 @@ define(function () {
         return -1;
       };
 
-
-      /* Alternative to merge is to check existing notes and
-       * just expand the note accordingly. Look at the selection
-       * and see what is next door to it. If it's a note then
-       * just append it*/
-
-
-
       /*
        * These two function are for moving in and out of the scribe-markers
        * for merging purposes - they are only used when merging
        */
       function getPreviousSibling (node) {
         var previous = node.previousSibling;
+
         if (checkScribeMarker(node.previousSibling)
             && node.previousSibling.previousSibling) {
           previous = node.previousSibling.previousSibling;
@@ -125,24 +137,22 @@ define(function () {
         return next;
       }
 
-
       function canMerge (node) {
-        return (node.previousSibling && isNote(getPreviousSibling(node)))
-          || (node.nextSibling && isNote(getNextSibling(node)));
-      }
+        var prev = getPreviousSibling(node);
+        var next = getNextSibling(node);
+        /*
+         * If the previousSibling or nextSibling is a block element - the note is inside it
+         */
+        if (isBlockElement(prev)) {
+          prev = prev.childNodes[0];
+        }
 
-      function mergeNotes(selection, range) {
-        selection.placeMarkers();
-        selection.selectMarkers(true);
-        var nodes = buildNodeList(range.commonAncestorContainer, function (node) {
-          return isNote(node);
-        });
-        nodes.forEach(function (item) {
-          // problem I can see is that some of these will already be merged
-          if (canMerge(item)) {
-            merge(node);
-          }
-        });
+        if (isBlockElement(next)) {
+          next = next.childNodes[0];
+        }
+
+        return (node.previousSibling && isNote(prev))
+          || (node.nextSibling && isNote(getNextSibling(node)));
       }
 
       function walk(node, func) {
@@ -186,7 +196,7 @@ define(function () {
             return; //do nothing
           }
 
-
+          debugger;
           if (checkScribeMarker(node)) {
             // begin pushing elements
             if (scribeMarkerLocated === true) {
@@ -208,21 +218,18 @@ define(function () {
 
 
       /*
-       * This wraps all elements that contain block elements
-       * in a note class.
+       * This wraps all elements between the scribe markers in a note class.
        */
       function wrapBlocks (range) {
-
         var commonAncestor = range.commonAncestorContainer;
-
         var nodes = buildNodeList(commonAncestor, function (node) {
           return !checkScribeMarker(node)
             && (getScribeMarker(node.childNodes) === -1);
         });
 
-
         nodes.forEach(function (item) {
           if (canMerge(item)) {
+            // issues here with block and text element
             merge(item);
           } else {
             replace(item);
@@ -231,6 +238,14 @@ define(function () {
       }
 
       function merge(node) {
+        /*
+         * Some issues arise in merging.
+         * Namely, how should we merge a B and somehing else?
+         * It we wrapped the nodes in a span that would be okay but
+         * we don't do that.
+         */
+
+
         // determine what a node should be merged with
         var parent = node.parentNode;
         var previousSibling = getPreviousSibling(node);
@@ -243,21 +258,45 @@ define(function () {
           content = node.innerHTML;
         }
 
-        if (previousSibling) {
+        if (isNote(previousSibling)) {
+          // left merge
           previousSibling.appendChild(content);
-        } else if (nextSibling) {
-          nextSibling.appendChild(content);
+        } else {
+          // right merge
+          nextSibling.insertBefore(content, nextSibling.childNodes[0]);
         }
 
-        // remove the node empty note
-        parent.removeChild(node);
+        /* as we do a greedy left merge
+         * there will only ever be a node on the right that
+         * needs to be merged into this node
+         * so next we try and merge again but only
+         * to the right
+         */
+        if (isNote(nextSibling)) {
+          debugger;
+          // append the contents of the nextSibling to this node
+          // and delete the nextSibling
+          var temp;
+          if (nextSibling.childNodes[0].nodeType === Node.TEXT_NODE) {
+            temp = nextSibling.childNodes[0];
+          } else {
+            temp = nextSibling.innerHTML;
+        }
 
+          previousSibling.appendChild(temp);
+          parent.removeChild(nextSibling);
+
+        }
       }
 
       function replace(item) {
         var wrap;
         var parent = item.parentNode;
         var sibling = item.nextSibling;
+        // create an empty text element and insert
+        // it afer the note so people can move outside it
+        var text = document.createTextNode(" ");
+        text.innerText = " ";
 
         // replace the item with it's expected
         // note
