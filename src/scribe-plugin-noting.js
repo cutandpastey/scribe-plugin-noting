@@ -51,7 +51,7 @@ define(function () {
         // we try and wrap inline elements as this makes it easier for
         // merging and altering things
         if (content.parentNode && isInlineElement(content.parentNode)) {
-          value = content;
+          value = content.parentNode.cloneNode(true);
         }
 
         wrap.appendChild(value);
@@ -243,7 +243,6 @@ define(function () {
             && (getScribeMarker(node.childNodes) === -1);
         });
 
-        debugger;
         nodes.forEach(function (item) {
           if (canMerge(item)) {
             // issues here with block and text element
@@ -307,10 +306,8 @@ define(function () {
         var wrap;
         var parent = item.parentNode;
         var sibling = item.nextSibling;
-        // create an empty text element and insert
-        // it afer the note so people can move outside it
-        var text = document.createTextNode(" ");
-        text.innerText = " ";
+
+        debugger;
 
         // replace the item with it's expected
         // note
