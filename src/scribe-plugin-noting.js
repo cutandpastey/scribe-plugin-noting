@@ -71,7 +71,7 @@ define(function () {
       }
 
       function isInlineElement(node) {
-        return blocks.indexOf(node.nodeName) !== 1;
+        return blocks.indexOf(node.nodeName) !== -1;
       }
 
       function isBlockElement (node) {
