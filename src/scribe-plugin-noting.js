@@ -44,15 +44,8 @@ define(function () {
         // wrap the contents of a text node
         // they behave diffent
         var wrap = createWrap();
-        var value = content;
-
-        if (content.parentNode && isInlineElement(content.parentNode)) {
-          // elements like I and B and STRONG etc. can be put inside the note
-          // notes are basically treated like SPANS
-          value = content.parentNode;
-        }
-
-        wrap.appendChild(value);
+        content.textContent = content.textContent;
+        wrap.appendChild(content);
         return wrap;
       }
 
@@ -64,6 +57,7 @@ define(function () {
         // there are some issues with LIs and Bs at the moment
         var wrap = createWrap();
         var temp = block.cloneNode(true);
+        wrap.innerHTML = temp.innerHTML;
         temp.appendChild(wrap);
         return temp;
       }
@@ -336,7 +330,22 @@ define(function () {
         // when there are block elements.
 
         var commonAncestor = range.commonAncestorContainer;
-        var parent = commonAncestor.parentNode;
+        // this is the note - or at least it's meant to be
+        // in Firefore it's not so we just get the
+        // containing note
+        var commonAncestor = selection.getContaining(function (node) {
+          return isNote(node);
+        });
+
+        if (!commonAncestor) {
+          // this is to get round Firefox positioning the range in a
+          // different place to Chrome so the commonAncestor is
+          // actually the p not the note like we'd expect
+          var nodeList = buildNodeList(range.commonAncestorContainer, function (node) {
+            return isNote(node);
+          });
+          commonAncestor = nodeList[0];
+        }
 
         // this is random - but basically the range thinks the
         // span is the common ancestor if we only select a little bit of
@@ -348,7 +357,7 @@ define(function () {
         }
 
 
-        var contents = document.createTextNode(commonAncestor.innerText);
+        var contents = document.createTextNode(commonAncestor.innerHTML);
         parent.replaceChild(contents, commonAncestor);
 
 
@@ -386,12 +395,8 @@ define(function () {
         // selection.selection.data currently will duplicate things if there is no
         // actual selection
 
-        var base =  selection.selection.baseOffset;
-        var focus = selection.selection.focusOffset;
-
-        if(base !== focus) {
+        if(! selection.selection.isCollapsed) {
           if (this.queryState()) {
-
             if (!hasBlockElements(cloned)) {
               basicUnwrap(range);
             } else {
@@ -431,7 +436,7 @@ define(function () {
 
       scribe.el.addEventListener('keydown', function (event) {
         //that's F10 and F8 and alt+del
-        if (event.keyCode === 121 ||event.keyCode === 119 || (event.altKey && event.keyCode === 121)) {
+        if (event.keyCode === 121 ||event.keyCode === 119) {
           event.preventDefault();
           var noteCommand = scribe.getCommand("note");
           noteCommand.execute();
