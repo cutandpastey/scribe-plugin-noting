@@ -289,7 +289,7 @@ define(function () {
 
       }
 
-      function basicUnwrap( range) {
+      function basicUnwrap(selection, range) {
         // this is a seriously flaky way of doing it at the moment
         // I think there are much better alternatives
         // TODO: Investigate if it's even worth doing this on an undo
@@ -365,7 +365,7 @@ define(function () {
         if(! selection.selection.isCollapsed) {
           if (this.queryState()) {
             if (!hasBlockElements(cloned)) {
-              basicUnwrap(range);
+              basicUnwrap(selection, range);
             } else {
               descentUnwrap(range);
             }
