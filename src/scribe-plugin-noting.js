@@ -284,6 +284,7 @@ define(function () {
         var block;
         var cloned;
         var parent = item.parentNode;
+        var grandparent = parent.parentNode;
         var sibling = item.nextSibling;
 
         // replace the item with it's expected
@@ -297,19 +298,19 @@ define(function () {
           wrap =  wrapBlock(item);
         }
 
-
-        /* this will not work currently
-         at the moment. As the if we're wrapping an
-         inline element the parent will be wrong.
-         Using the grandparent won't help either
-         as the scribe-marker has the inline element as its
-         parent so insertBefore will not work
+        /*
+         * There may additional issues with
+         * wrapping two inlines next to each other
+         * but to be honest this is a rare occurrence
          */
-        debugger;
 
         // replace directly on the tree
         if (sibling) {
           parent.insertBefore(wrap, sibling);
+        } else if (cloned) {
+          // if the element has been clone i.e. it's inline wrapped, this will
+          // wrap replace the parent - the inline el - on the grandparent
+          grandparent.replaceChild(wrap, item.parentNode);
         } else {
           parent.appendChild(wrap);
         }
