@@ -47,7 +47,6 @@ define(function () {
         var wrap = createWrap();
         var value = content;
 
-
         // we try and wrap inline elements as this makes it easier for
         // merging and altering things
         if (content.parentNode && isInlineElement(content.parentNode)) {
@@ -71,7 +70,7 @@ define(function () {
       }
 
       function isInlineElement(node) {
-        return blocks.indexOf(node.nodeName) !== -1;
+        return inline.indexOf(node.nodeName) !== -1;
       }
 
       function isBlockElement (node) {
@@ -267,7 +266,6 @@ define(function () {
         var previousSibling = getPreviousSibling(node);
         var nextSibling = getNextSibling(node);
         var content;
-        debugger;
         if (node.nodeType === Node.TEXT_NODE) {
           content = node;
         } else {
@@ -307,8 +305,6 @@ define(function () {
         var parent = item.parentNode;
         var sibling = item.nextSibling;
 
-        debugger;
-
         // replace the item with it's expected
         // note
         if (item.nodeType === Node.TEXT_NODE) {
@@ -326,6 +322,7 @@ define(function () {
          as the scribe-marker has the inline element as its
          parent so insertBefore will not work
          */
+        debugger;
 
         // replace directly on the tree
         if (sibling) {
