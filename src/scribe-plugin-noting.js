@@ -113,41 +113,9 @@ define(function () {
         return -1;
       };
 
-      /*
-       * These two function are for moving in and out of the scribe-markers
-       * for merging purposes - they are only used when merging
-       */
-      function getPreviousSibling (node) {
-        var previous = node.previousSibling;
-
-        if (!previous) {
-          return null;
-        }
-
-        if (checkScribeMarker(node.previousSibling)
-            && node.previousSibling.previousSibling) {
-          previous = node.previousSibling.previousSibling;
-        }
-        return previous;
-      }
-
-      function getNextSibling (node) {
-        var next = node.nextSibling;
-
-        if (!next) {
-          return null;
-        }
-
-        if (checkScribeMarker(node.nextSibling)
-            && node.nextSibling.nextSibling) {
-          next = node.nextSibling.nextSibling;
-        }
-        return next;
-      }
-
       function canMerge (node) {
-        var prev = getPreviousSibling(node);
-        var next = getNextSibling(node);
+        var prev = node.previousSibling;
+        var next = node.nextSibling;
 
         /*
          * If the previousSibling or nextSibling is a block element - the note is inside it
@@ -161,7 +129,7 @@ define(function () {
         }
 
         return (prev && isNote(prev))
-          || (next && isNote(getNextSibling(node)));
+          || (next && isNote(next));
       }
 
       function walk(node, func) {
@@ -228,13 +196,17 @@ define(function () {
       /*
        * This wraps all elements between the scribe markers in a note class.
        */
-      function wrapBlocks (range) {
+      function wrapBlocks (selection, range) {
         var commonAncestor = range.commonAncestorContainer;
         var nodes = buildNodeList(commonAncestor, function (node) {
           return !checkScribeMarker(node)
             && (getScribeMarker(node.childNodes) === -1);
         });
 
+
+        // we don't need the scribe markers now that we've
+        // got the nodes
+        selection.selectMarkers();
 
         nodes.forEach(function (item) {
           if (canMerge(item)) {
@@ -257,10 +229,10 @@ define(function () {
 
         // determine what a node should be merged with
         var parent = node.parentNode;
-        var previousSibling = getPreviousSibling(node);
-        var nextSibling = getNextSibling(node);
+        var previousSibling = node.previousSibling;
+        var nextSibling = node.nextSibling;
         var content;
-        debugger;
+
         if (node.nodeType === Node.TEXT_NODE) {
           content = node;
         } else {
@@ -403,7 +375,7 @@ define(function () {
               descentUnwrap(range);
             }
           } else {
-            wrapBlocks(range);
+            wrapBlocks(selection, range);
           }
           selection.selectMarkers();
           // TODO: empty the selection and place the caret after it
