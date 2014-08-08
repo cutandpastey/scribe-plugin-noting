@@ -17,6 +17,7 @@ define(function () {
       var dataName = "data-edited-by";
       var dataDate = "data-edited-date";
       var blocks = ["P", "LI", "UL"];
+      var inlines = ["B", "I", "STRONG", "EM"]; //more to add
       var noteCommand = new scribe.api.Command('insertHTML');
 
 
@@ -45,15 +46,20 @@ define(function () {
         var wrap = createWrap();
 
         var value = content;
+        var cloned = false;
 
         // we try and wrap inline elements as this makes it easier for
         // merging and altering things
         if (content.parentNode && isInlineElement(content.parentNode)) {
           value = content.parentNode.cloneNode(true);
+          cloned = true;
         }
 
         wrap.appendChild(value);
-        return wrap;
+        return {
+          wrap: wrap,
+          cloned: cloned
+        };
       }
 
       function wrapBlock(block) {
@@ -70,7 +76,7 @@ define(function () {
       }
 
       function isInlineElement(node) {
-        return inline.indexOf(node.nodeName) !== -1;
+        return inlines.indexOf(node.nodeName) !== -1;
       }
 
       function isBlockElement (node) {
@@ -275,6 +281,8 @@ define(function () {
 
       function replace(item) {
         var wrap;
+        var block;
+        var cloned;
         var parent = item.parentNode;
         var sibling = item.nextSibling;
 
@@ -282,7 +290,9 @@ define(function () {
         // note
         if (item.nodeType === Node.TEXT_NODE) {
           // this is for a basic selection
-          wrap = wrapText(item);
+          block = wrapText(item);
+          wrap = block.wrap;
+          cloned = block.cloned;
         } else {
           wrap =  wrapBlock(item);
         }
