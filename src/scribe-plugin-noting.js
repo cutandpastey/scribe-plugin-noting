@@ -43,7 +43,6 @@ define(function () {
         // wrap the contents of a text node
         // they behave diffent
         var wrap = createWrap();
-        content.textContent = content.textContent;
         wrap.appendChild(content);
         return wrap;
       }
