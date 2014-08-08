@@ -313,6 +313,13 @@ define(function () {
           commonAncestor = nodeList[0];
         }
 
+<<<<<<< HEAD
+=======
+        selection.selectMarkers();
+        var parent = commonAncestor.parentNode;
+
+
+>>>>>>> master
         // this is random - but basically the range thinks the
         // span is the common ancestor if we only select a little bit of
         // the note
