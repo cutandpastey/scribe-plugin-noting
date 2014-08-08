@@ -17,7 +17,6 @@ define(function () {
       var dataName = "data-edited-by";
       var dataDate = "data-edited-date";
       var blocks = ["P", "LI", "UL"];
-      var inline = ["B", "I", "EM"]; //more to come
       var noteCommand = new scribe.api.Command('insertHTML');
 
 
@@ -60,10 +59,6 @@ define(function () {
         wrap.innerHTML = temp.innerHTML;
         temp.appendChild(wrap);
         return temp;
-      }
-
-      function isInlineElement(node) {
-        return blocks.indexOf(node.nodeName) !== 1;
       }
 
       function isBlockElement (node) {
