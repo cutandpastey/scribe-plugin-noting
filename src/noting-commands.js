@@ -143,7 +143,7 @@ function addNoteCollapseListener(scribe) {
 function addContentChangedListener(scribe) {
   scribe.el.addEventListener('input', function() {
 
-    vdom.mutateScribe(scribe, function(treeFocus) {
+    vdom.mutate(scribe, function(treeFocus) {
       noteToggle.ensureNoteIntegrity(treeFocus);
     });
 

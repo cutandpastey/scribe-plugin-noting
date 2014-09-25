@@ -148,15 +148,14 @@ function createVirtualScribeMarker() {
 }
 
 function createNoteBarrier(startOrEnd) {
-  // Note that the note barrier must be empty. This prevents the web
-  // browser from ever placing the caret inside of the tag. The problem
-  // with allowing the caret to be placed inside of the tag is that we'll
-  // end up with text within the note barriers.
+  // We prevent the browser from ever placing the caret inside of the tag.
+  // The problem with allowing the caret to be placed inside of the tag is
+  // that we'll end up with text within the note barriers.
   //
-  // However, keeping it empty makes it necessary to specify the CSS
-  // ".note-barrier { display: inline-block }" or browsers will render
-  // a line break after each note barrier.
-  return h(NOTE_BARRIER_TAG + '.note-barrier' + '.note-barrier--' + startOrEnd);
+  // A solution seems to be to insert a BR inside the note barrier, and then
+  // preventing browsers from rendering a line break using CSS.
+  return h(NOTE_BARRIER_TAG + '.note-barrier' + '.note-barrier--' + startOrEnd
+    , [h('br')]);
 }
 
 function updateNoteBarriers(treeFocus) {
@@ -241,9 +240,6 @@ function createNoteFromSelection(treeFocus) {
 
   var noteSegments = vdom.findEntireNote(lastNoteSegment);
   updateNoteProperties(noteSegments);
-
-  // If we end up with an empty note a <BR> tag would be created.
-  // preventBrTags(treeFocus);
 }
 
 function unnote(treeFocus) {
@@ -390,67 +386,8 @@ function mergeIfNecessary(treeFocus) {
   vdom.findAllNotes(treeFocus).filter(criteria).forEach(updateNoteProperties);
 }
 
-
-// In a contenteditable, browsers insert a <BR> tag into any empty element.
-// This causes styling issues when the user deletes a part of a note,
-// e.g. using backspace. This function provides a workaround and should be run
-// anytime a note segment might be empty (as defined by `vdom.consideredEmpty`).
-function preventBrTags(treeFocus) {
-  function isTrue(obj) { return !!obj; }
-
-  function removeEmptyAncestors(focus) {
-    var f = focus;
-    while (f) {
-      if (! f.canDown()) f.remove();
-      f = f.up();
-    }
-  }
-
-  // When we delete a space we want to add a space to the previous
-  // note segment.
-  function addSpaceToPrevSegment(segment) {
-      var prevNoteSegment = segment.prev().find(vdom.focusOnNote, 'prev');
-
-      if (prevNoteSegment) {
-        var lastTextNode = _.last(prevNoteSegment.vNode.children.filter(isVText));
-        if (lastTextNode) lastTextNode.text = lastTextNode.text + ' ';
-      }
-  }
-
-  // We're only interested in when content is removed, meaning
-  // there should only be one marker (a collapsed selection).
-  //
-  // Could possibly develop a way of knowing deletions from
-  // additions, but this isn't necessary at the moment.
-  var markers = vdom.findMarkers(treeFocus);
-  if (markers.length === 2) return;
-
-
-  // We're good to go.
-  var marker = markers[0];
-
-  // Let's find any note segment before or after the marker.
-  var segments = [
-    marker.find(vdom.focusOnNote, 'prev'),
-    marker.find(vdom.focusOnNote)
-  ].filter(isTrue);
-
-  // Replace/delete empty notes, and parents that might have become empty.
-  segments.filter(function (segment) { return !!segment; })
-    .map(function (segment) {
-      if (vdom.withEmptyTextNode(segment)) addSpaceToPrevSegment(segment);
-
-      if (vdom.withoutText(segment) || vdom.withEmptyTextNode(segment)) {
-      // In Chrome, removing causes text before the note to be deleted when
-      // deleting the last note segment. Replacing with an empty node works
-      // fine in Chrome and FF.
-      var replaced = segment.replace(new VText('\u200B'));
-
-      removeEmptyAncestors(replaced);
-    }
-  });
-}
-
+// In FF empty note segments can be left behind, e.g. when deleting using
+// backspace. This function simply removes any empty notes.
 function removeEmptyNoteSegments(treeFocus) {
   function focusOnEmptyNode (focus) {
     return focus.vNode.children.length === 0;
@@ -466,7 +403,6 @@ function removeEmptyNoteSegments(treeFocus) {
 exports.ensureNoteIntegrity = function (treeFocus) {
   mergeIfNecessary(treeFocus);
   updateNoteBarriers(treeFocus);
-  // preventBrTags(treeFocus);
   removeEmptyNoteSegments(treeFocus);
 };
 
