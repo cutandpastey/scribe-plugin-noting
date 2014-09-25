@@ -243,7 +243,7 @@ function createNoteFromSelection(treeFocus) {
   updateNoteProperties(noteSegments);
 
   // If we end up with an empty note a <BR> tag would be created.
-  preventBrTags(treeFocus);
+  // preventBrTags(treeFocus);
 }
 
 function unnote(treeFocus) {
@@ -374,9 +374,20 @@ function mergeIfNecessary(treeFocus) {
     return uniqVals.length > 1;
   }
 
+  function lacksStartOrEnd(note) {
+    var hasNoteStart = 'noteStart' in note[0].vNode.properties.dataset;
+    var hasNoteEnd = 'noteEnd' in note[note.length - 1].vNode.properties.dataset;
+
+    return ! (hasNoteStart && hasNoteEnd);
+  }
+
   // Merging is simply a matter of updating the attributes of any notes
-  // where all the segments of the note doesn't have the same timestamp.
-  vdom.findAllNotes(treeFocus).filter(inconsistentTimestamps).forEach(updateNoteProperties);
+  // where all the segments of the note doesn't have the same timestamp,
+  // or where there's no start or end property (e.g. when the user has deleted
+  // the last note segment of a note).
+  function criteria(note) { return inconsistentTimestamps(note) || lacksStartOrEnd(note); }
+
+  vdom.findAllNotes(treeFocus).filter(criteria).forEach(updateNoteProperties);
 }
 
 
@@ -440,11 +451,23 @@ function preventBrTags(treeFocus) {
   });
 }
 
+function removeEmptyNoteSegments(treeFocus) {
+  function focusOnEmptyNode (focus) {
+    return focus.vNode.children.length === 0;
+  }
+
+  var allNoteSegments = _.flatten(vdom.findAllNotes(treeFocus));
+  allNoteSegments.filter(focusOnEmptyNode).forEach(function (segment) {
+    segment.remove();
+  });
+}
+
 
 exports.ensureNoteIntegrity = function (treeFocus) {
   mergeIfNecessary(treeFocus);
   updateNoteBarriers(treeFocus);
-  preventBrTags(treeFocus);
+  // preventBrTags(treeFocus);
+  removeEmptyNoteSegments(treeFocus);
 };
 
 

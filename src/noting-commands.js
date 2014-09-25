@@ -17,7 +17,6 @@ var vdom = require('./noting-vdom');
  * @param  {String} user  Current user string.
  */
 exports.init = function(scribe, user) {
-
   // initialise current user for Noting API
   noteToggle.user = user;
 

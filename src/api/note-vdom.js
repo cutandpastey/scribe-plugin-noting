@@ -40,17 +40,7 @@ function consideredEmpty(s) {
   var zeroWidthSpace = '\u200B';
   var nonBreakingSpace = '\u00a0';
 
-  // We incude regular spaces because if we have a note tag that only
-  // includes a a regular space, then the browser will also insert a <BR>.
-  // If we consider a string containing only a regular space as empty we
-  // can remove the note tag to avoid the line break.
-  //
-  // Not ideal since it causes the space to be deleted even though the user
-  // hasn't asked for that. We compensate for this by moving any deleted
-  // space to the previous note segment.
-  var regularSpace = ' ';
-
-  return s === '' || s === zeroWidthSpace || s === nonBreakingSpace || s === regularSpace;
+  return s === '' || s === zeroWidthSpace || s === nonBreakingSpace;
 }
 
 function focusOnEmptyTextNode(focus) {
