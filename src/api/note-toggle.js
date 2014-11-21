@@ -448,7 +448,7 @@ function mergeIfNecessary(treeFocus) {
   // the last note segment of a note).
   function criteria(note) { return inconsistentTimestamps(note) || lacksStartOrEnd(note); }
 
-  vdom.findAllNotes(treeFocus).filter(criteria).forEach(updateNoteProperties);
+  //vdom.findAllNotes(treeFocus).filter(criteria).forEach(updateNoteProperties);
 }
 
 
